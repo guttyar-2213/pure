@@ -53,6 +53,15 @@ prompt_pure_check_cmd_exec_time() {
 	}
 }
 
+# Get the running CPU architecture and set the variable.
+# Displays it only when using Rosetta2 (x86_64).
+prompt_pure_check_arch() {
+	typeset -g prompt_pure_arch=
+	if [ "$(arch)" = "i386" ]; then
+		typeset -g prompt_pure_arch="i386"
+	fi
+}
+
 prompt_pure_set_title() {
 	setopt localoptions noshwordsplit
 
@@ -142,6 +151,9 @@ prompt_pure_preprompt_render() {
 	# Set the path.
 	preprompt_parts+=('%F{${prompt_pure_colors[path]}}%~%f')
 
+	# CPU architecture info.
+  [[ -n $prompt_pure_arch ]] && preprompt_parts+=('%F{$prompt_pure_colors[arch]}${prompt_pure_arch}%f')
+
 	# Git branch and dirty status info.
 	typeset -gA prompt_pure_vcs_info
 	if [[ -n $prompt_pure_vcs_info[branch] ]]; then
@@ -203,6 +215,9 @@ prompt_pure_precmd() {
 	# Check execution time and store it in a variable.
 	prompt_pure_check_cmd_exec_time
 	unset prompt_pure_cmd_timestamp
+
+	# Check if it is running on Rosetta2.
+	prompt_pure_check_arch
 
 	# Shows the full path in the title.
 	prompt_pure_set_title 'expand-prompt' '%~'
@@ -826,6 +841,7 @@ prompt_pure_setup() {
 		user                 242
 		user:root            default
 		virtualenv           242
+		arch                 242
 	)
 	prompt_pure_colors=("${(@kv)prompt_pure_colors_default}")
 
