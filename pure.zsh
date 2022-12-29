@@ -62,6 +62,12 @@ prompt_pure_check_arch() {
 	fi
 }
 
+# asdf-vm support.
+# Displays current environment.
+prompt_pure_check_asdf() {
+	echo $(asdf current 2>&1 | awk -v OFS=, 'IF $3!=ENVIRON["HOME"]"/.tool-versions"{print$1}' | xargs)
+}
+
 prompt_pure_set_title() {
 	setopt localoptions noshwordsplit
 
@@ -153,6 +159,8 @@ prompt_pure_preprompt_render() {
 
 	# CPU architecture info.
 	[[ -n $prompt_pure_arch ]] && preprompt_parts+=('%F{$prompt_pure_colors[arch]}${prompt_pure_arch}%f')
+
+	[[ -n $prompt_pure_asdf ]] && preprompt_parts+=('%F{$prompt_pure_colors[asdf]}${prompt_pure_asdf}%f')
 
 	# Git branch and dirty status info.
 	typeset -gA prompt_pure_vcs_info
@@ -446,9 +454,11 @@ prompt_pure_async_tasks() {
 		unset prompt_pure_git_fetch_pattern
 		prompt_pure_vcs_info[branch]=
 		prompt_pure_vcs_info[top]=
+		unset prompt_pure_asdf
 	fi
 	unset MATCH MBEGIN MEND
 
+	async_job "prompt_pure" prompt_pure_check_asdf
 	async_job "prompt_pure" prompt_pure_async_vcs_info
 
 	# Only perform tasks inside a Git working tree.
@@ -533,6 +543,10 @@ prompt_pure_async_callback() {
 				# rerun async tasks just in case.
 				prompt_pure_async_tasks
 			fi
+			;;
+		prompt_pure_check_asdf)
+			typeset -g prompt_pure_asdf="$output"
+			do_render=1
 			;;
 		prompt_pure_async_vcs_info)
 			local -A info
@@ -839,6 +853,7 @@ prompt_pure_setup() {
 		user:root            default
 		virtualenv           242
 		arch                 242
+		asdf                 green
 	)
 	prompt_pure_colors=("${(@kv)prompt_pure_colors_default}")
 
